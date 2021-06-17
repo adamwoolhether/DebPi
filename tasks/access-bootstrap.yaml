@@ -1,16 +1,16 @@
   - name: "TASK: QUICK AND DIRTY ACCESS BOOTSTRAPPING"
     block:  
     - name: "COPYING ROOT SSH KEYS"  
-      shell: sshpass -p {{ con_pass }} ssh-copy-id -i ~/.ssh/id_rsa.pub -o StrictHostKeyChecking=no root@{{ host_ip }}
+      shell: sshpass -p {{ con_pass }} ssh-copy-id -i ~/.ssh/id_rsa.pub -o 'ProxyJump=root@10.1.1.33' -o StrictHostKeyChecking=no root@{{ host_ip }}
     - name: "ADDING ANSIBLE USER" 
       expect:
-        command: ssh root@{{ host_ip }} 'useradd -m {{ user_name }} -s /bin/bash && passwd {{ user_name }}'
+        command: ssh -F files/ssh_bastion.cfg root@{{ host_ip }} 'useradd -m {{ user_name }} -s /bin/bash && passwd {{ user_name }}'
         responses:
           "New password:": "{{ ansible_pass }}"
           "Retype new password:": "{{ ansible_pass }}"
     - name: "ADDING {{ user_name }} TO SSHD CONFIG"
       shell: > 
-        ssh root@{{ host_ip }} 'echo "AllowUsers {{ user_name }} ansible root" >> /etc/ssh/sshd_config && 
+        ssh -F files/ssh_bastion.cfg root@{{ host_ip }} 'echo "AllowUsers {{ user_name }} ansible root" >> /etc/ssh/sshd_config && 
         systemctl restart sshd'
     - name: "ADDING ANSIBLE USER SSH KEYS"
-      shell: sshpass -p {{ ansible_pass }} ssh-copy-id -i ~/.ssh/id_rsa.pub -o StrictHostKeyChecking=no {{ user_name }}@{{ host_ip }}
+      shell: sshpass -p {{ ansible_pass }} ssh-copy-id -i ~/.ssh/id_rsa.pub -o 'ProxyJump=root@10.1.1.33' -o StrictHostKeyChecking=no {{ user_name }}@{{ host_ip }}

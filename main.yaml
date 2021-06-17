@@ -3,6 +3,7 @@
   connection: local
   gather_facts: false
   vars_files: defaults/bootstrap.yaml
+  tags: test2
 
   tasks:
   - name: "TASK: TEST ACCESS"

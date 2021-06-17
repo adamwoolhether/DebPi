@@ -1,5 +1,5 @@
   - name: "TASK: TEST FOR SSH CAPABILITY FOR HOST: {{ host_ip }}"
-    shell: ssh -o PasswordAuthentication=no {{ user_name }}@{{ host_ip }} 'whoami'
+    shell: ssh -F files/ssh_bastion.cfg -o PasswordAuthentication=no {{ user_name }}@{{ host_ip }} 'whoami'
     register: ssh_access_ok
     ignore_errors: true
     changed_when: false
@@ -10,7 +10,7 @@
     when: ssh_access_ok.rc != 0
 
   - name: "TASK: TEST FOR SSH CAPABILITY FOR HOST: {{ host_ip }}"
-    shell: ssh {{ user_name }}@{{ host_ip }} 'sudo whoami'
+    shell: ssh -F files/ssh_bastion.cfg {{ user_name }}@{{ host_ip }} 'sudo whoami'
     register: sudo_ok
     ignore_errors: true
     changed_when: false
