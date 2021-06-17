@@ -1,0 +1,15 @@
+[controller]
+debpi-con ansible_host=192.168.1.100
+
+[node]
+debpi-node1 ansible_host=192.168.1.101
+debpi-node2 ansible_host=192.168.1.102
+debpi-node3 ansible_host=192.168.1.103
+
+[gatewayed:children]
+controller
+node
+
+[all:children]
+controller
+node

@@ -1,0 +1,21 @@
+  - name: "TASK: TEST FOR SSH CAPABILITY FOR HOST: {{ host_ip }}"
+    shell: ssh -o PasswordAuthentication=no {{ user_name }}@{{ host_ip }} 'whoami'
+    register: ssh_access_ok
+    ignore_errors: true
+    changed_when: false
+  - debug:
+      msg: "return code: {{ ssh_access_ok.rc }} for whoami: {{ ssh_access_ok.stdout }}"
+  - name: "INCLUDE BOOTSRAP TASKS"
+    include_tasks: access-bootstrap.yaml
+    when: ssh_access_ok.rc != 0
+
+  - name: "TASK: TEST FOR SSH CAPABILITY FOR HOST: {{ host_ip }}"
+    shell: ssh {{ user_name }}@{{ host_ip }} 'sudo whoami'
+    register: sudo_ok
+    ignore_errors: true
+    changed_when: false
+  - debug:
+      msg: "return code: {{ sudo_ok.rc }} for sudo whoami: {{ sudo_ok.stdout }}"
+  - name: "INCLUDE BOOTSRAP SUDO"
+    include_tasks: access-bootstrap-sudo.yaml
+    when: sudo_ok.rc != 0
