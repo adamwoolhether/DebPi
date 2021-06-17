@@ -1,0 +1,122 @@
+# - name: "PLAY 1: SETUP CONTROLLER"
+#   hosts: controller
+#   become: true
+#   gather_facts: yes
+
+#   tasks:
+    # - name: "UPDATE OS"
+    #   apt:
+    #     update_cache: yes
+    #     upgrade: dist
+
+    # - name: "BLOCK TASK: CONFIGURE eth0 INTERFACE"
+    #   block:
+    #     - name: "BACKUP ORIGINAL"
+    #       copy:
+    #         remote_src: yes
+    #         src: /etc/network/interfaces.d/eth0
+    #         dest: /etc/network/interfaces.d/eth0.bak
+    #         mode: "0644"
+    #     - name: "COPY CONFIURATION"
+    #       copy:
+    #         src: templates/eth0
+    #         dest: /etc/network/interfaces.d/eth0
+    #         mode: "0644"
+
+    # - name: "TASK: INSTALL ISC-DHCP-SERVER"
+    #   apt:
+    #     name: isc-dhcp-server
+    #     state: present
+
+    # - name: "BLOCK TASK: CONFIGURE DHCP"
+    #   block:
+    #     - name: "BACKUP ORIGINAL"
+    #       copy:
+    #         remote_src: yes
+    #         src: /etc/dhcp/dhcpd.conf
+    #         dest: /etc/dhcp/dhcpd.conf.bak
+    #         mode: "0644"
+    #     - name: "COPY dhcpd.conf"
+    #       copy:
+    #         src: templates/dhcpd.conf
+    #         dest: /etc/dhcp/dhcpd.conf
+    #         mode: "0644"
+    #     - name: "SET INTERFACE FOR ISC-DHCP-SERVER"
+    #       lineinfile:
+    #         path: /etc/default/isc-dhcp-server
+    #         regexp: "^INTERFACESv4="
+    #         line: INTERFACESv4="eth0"
+
+    # - name: "TASK: ENABLE IPV4 FORWARDING"
+    #   sysctl:
+    #     name: net.ipv4.ip_forward
+    #     value: "1"
+    #     sysctl_set: yes
+
+    # - name: "BLOCK TASK: ADD IPTABLES RULES"
+    #   block:
+    #     - iptables:
+    #         table: nat
+    #         action: append
+    #         chain: POSTROUTING
+    #         out_interface: wlan0
+    #         jump: MASQUERADE
+    #     - iptables:
+    #         action: append
+    #         chain: FORWARD
+    #         in_interface: wlan0
+    #         out_interface: eth0
+    #         ctstate: RELATED,ESTABLISHED
+    #         jump: ACCEPT
+    #     - iptables:
+    #         action: append
+    #         chain: FORWARD
+    #         in_interface: eth0
+    #         out_interface: wlon0
+    #         jump: ACCEPT
+
+    # - name: "TASK: RESTART CONTROLLER"
+    #   reboot:
+    #     msg: reboot initiated
+    #     pre_reboot_delay: "5"
+    #     test_command: whoami
+    # - debug:
+    #     msg: rebooted successfully
+
+    # - name: "TASK: WAITING FOR NODES DHCP-LEASING"
+    #   debug:
+    #     msg: "please plug in the nodes one at a time, starting with 1st node"
+    # - wait_for:
+    #     path: /var/lib/dhcp/dhcpd.leases
+    #     search_regex: 192.168.1.101
+    # - debug:
+    #     msg: "node1 available, please plug in node2"
+    # - wait_for:
+    #     path: /var/lib/dhcp/dhcpd.leases
+    #     search_regex: 192.168.1.102
+    # - debug:
+    #     msg: "node2 available, please plug in node3"
+    # - wait_for:
+    #     path: /var/lib/dhcp/dhcpd.leases
+    #     search_regex: 192.168.1.103
+    # - debug:
+    #     msg: "node3 available, all nodes online"
+
+- name: "PLAY: PREPARE NODES FOR MANAGEMENT"
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+  - name: "TASK: SET HOSTNAME"
+    hostname:
+      name: "{{ inventory_hostname }}"
+
+  - name: "TASK: WRITE HOSTS FILE"
+    blockinfile:
+      path: /etc/hosts
+      block: |
+        {{ item.ip }} {{ item.name }}
+      marker: "# {mark} ANSIBLE MANAGED BLOCK"
+      loop: 
+        - { ip: "{{ ansible_default_ipv4['address'] }}", name: "{{ inventory_hostname }}" }
