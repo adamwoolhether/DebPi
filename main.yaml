@@ -90,34 +90,33 @@
             in_interface: eth0
             out_interface: wlon0
             jump: ACCEPT
-
-    - name: "TASK: RESTART CONTROLLER"
-      reboot:
-        msg: reboot initiated
-        pre_reboot_delay: "5"
-        test_command: whoami
+          notify: restart_device
     - debug:
-        msg: rebooted successfully
+        msg: >
+          "{% if restart_success.rebooted == true %} Restart '{{ inventory_hostname }}' 
+          successful. {% else %} Restart '{{ inventory_hostname }}' failed.{% endif %}"
 
     - name: "TASK: WAIT FOR NODES DHCP-LEASING"
       debug:
-        msg: "please plug in the worker nodes one at a time, starting with 1st node"
+        msg: > 
+          "please plug in the worker nodes one at a time, starting with 1st node, 
+          and waiting for an ip is assigned before proceeding."
     - name: "wait for node 1"
       wait_for:
         path: /var/lib/dhcp/dhcpd.leases
-        search_regex: 192.168.1.101
+        search_regex: "{{ node_ip['1'] }}"
     - debug:
         msg: "node1 available, please plug in node2"
     - name: "wait for node 2"
       wait_for:
         path: /var/lib/dhcp/dhcpd.leases
-        search_regex: 192.168.1.102
+        search_regex: "{{ node_ip['2'] }}"
     - debug:
         msg: "node2 available, please plug in node3"
     - name: "wait for node 3"
       wait_for:
         path: /var/lib/dhcp/dhcpd.leases
-        search_regex: 192.168.1.103
+        search_regex: "{{ node_ip['3'] }}"
     - debug:
         msg: "node3 available, all nodes online"
 
@@ -144,7 +143,7 @@
     vars:
       host_ip: "{{ node_ip['3'] }}"
 
-- name: "PLAY: SETUP HOSTNAME AND HOSTS FILE"
+- name: "PLAY: BASIC OS SETUP"
   hosts: all
   become: true
   gather_facts: true
@@ -161,3 +160,13 @@
       owner: root
       group: root
       mode: '0644'
+
+  - name: "UPDATE DISTRO AND PACKAGES"
+    apt:
+      update_cache: yes
+      upgrade: full
+    handler: restart_device
+  - debug:
+        msg: >
+          "{% if restart_success.rebooted == true %} Restart '{{ inventory_hostname }}' 
+          successful. {% else %} Restart '{{ inventory_hostname }}' failed.{% endif %}"

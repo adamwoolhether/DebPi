@@ -1,5 +1,5 @@
   - name: "INSTALL SUDO AND ADD {{ user_name }} TO SUODERS"
     shell: >
-      ssh -F files/ssh_bastion.cfg root@{{ host_ip }} 'apt update &&  
+      ssh -F files/bastion.cfg root@{{ host_ip }} 'apt update &&  
       apt-get install sudo && 
       echo "{{ user_name }} ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/{{ user_name }}'
