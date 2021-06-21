@@ -1,16 +1,23 @@
-  - name: "TASK: TEST FOR SSH CAPABILITY FOR HOST: {{ host_ip }}"
-    shell: ssh -F files/bastion.cfg -o PasswordAuthentication=no {{ user_name }}@{{ host_ip }} 'whoami'
+  - name: "ACCESS TEST FOR SSH CAPABILITY FOR HOST: {{ host_ip }}"
+    shell: >
+      {% if gateway_bootstrap == true %}ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=accept-new {{ user_name }}@{{ host_ip }} 'whoami'
+      {% else %}ssh -J root@'{{ gateway_ip }}' -o PasswordAuthentication=no -o StrictHostKeyChecking=accept-new {{ user_name }}@{{ host_ip }} 'whoami'
+      {% endif %}
     register: ssh_access_ok
     ignore_errors: true
     changed_when: false
   - debug:
       msg: "return code: {{ ssh_access_ok.rc }} for whoami: {{ ssh_access_ok.stdout }}"
+      
   - name: "INCLUDE BOOTSRAP TASKS"
     include_tasks: access-bootstrap.yaml
     when: ssh_access_ok.rc != 0
 
-  - name: "TASK: TEST FOR SSH CAPABILITY FOR HOST: {{ host_ip }}"
-    shell: ssh -F files/bastion.cfg {{ user_name }}@{{ host_ip }} 'sudo whoami'
+  - name: "TEST USER {{ user_name }} SSH CAPABILITY FOR HOST: {{ host_ip }}"
+    shell: >
+      {% if gateway_bootstrap == true %}ssh {{ user_name }}@{{ host_ip }} 'sudo whoami'
+      {% else %}ssh -J root@{{ gateway_ip }} {{ user_name }}@{{ host_ip }} 'sudo whoami'
+      {% endif %}
     register: sudo_ok
     ignore_errors: true
     changed_when: false

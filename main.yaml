@@ -3,170 +3,171 @@
   connection: local
   gather_facts: false
   vars_files: defaults/bootstrap.yaml
-  tags: test2
 
   tasks:
   - name: "TASK: TEST ACCESS"
     import_tasks: tasks/access-test.yaml
     vars:
-      host_ip: "{{ con_wifi }}"
+      gateway_bootstrap: true
+      host_ip: "{{ gateway_ip }}"
 
-- name: "PLAY 1: SETUP CONTROLLER"
-  hosts: controller
-  become: true
-  gather_facts: yes
+# - name: "PLAY 1: SETUP CONTROLLER"
+#   hosts: controller
+#   become: true
+#   gather_facts: yes
 
-  tasks:
-    - name: "UPDATE OS"
-      apt:
-        update_cache: yes
-        upgrade: full
+#   tasks:
+#     - name: "UPDATE OS"
+#       apt:
+#         update_cache: yes
+#         upgrade: full
 
-    - name: "BLOCK-TASK: CONFIGURE eth0 INTERFACE"
-      block:
-        - name: "BACKUP ORIGINAL"
-          copy:
-            remote_src: yes
-            src: /etc/network/interfaces.d/eth0
-            dest: /etc/network/interfaces.d/eth0.bak
-            mode: "0644"
-        - name: "COPY CONFIURATION"
-          copy:
-            src: files/eth0
-            dest: /etc/network/interfaces.d/eth0
-            mode: "0644"
+#     - name: "BLOCK-TASK: CONFIGURE eth0 INTERFACE"
+#       block:
+#         - name: "BACKUP ORIGINAL"
+#           copy:
+#             remote_src: yes
+#             src: /etc/network/interfaces.d/eth0
+#             dest: /etc/network/interfaces.d/eth0.bak
+#             mode: "0644"
+#         - name: "COPY CONFIURATION"
+#           copy:
+#             src: files/eth0
+#             dest: /etc/network/interfaces.d/eth0
+#             mode: "0644"
 
-    - name: "TASK: INSTALL ISC-DHCP-SERVER"
-      apt:
-        name: isc-dhcp-server
-        state: present
+#     - name: "TASK: INSTALL ISC-DHCP-SERVER"
+#       apt:
+#         name: isc-dhcp-server
+#         state: present
 
-    - name: "BLOCK-TASK: CONFIGURE DHCP"
-      block:
-        - name: "BACKUP ORIGINAL"
-          copy:
-            remote_src: yes
-            src: /etc/dhcp/dhcpd.conf
-            dest: /etc/dhcp/dhcpd.conf.bak
-            mode: "0644"
-        - name: "COPY dhcpd.conf"
-          copy:
-            src: files/dhcpd.conf
-            dest: /etc/dhcp/dhcpd.conf
-            mode: "0644"
-        - name: "SET INTERFACE FOR ISC-DHCP-SERVER"
-          lineinfile:
-            path: /etc/default/isc-dhcp-server
-            regexp: "^INTERFACESv4="
-            line: INTERFACESv4="eth0"
+#     - name: "BLOCK-TASK: CONFIGURE DHCP"
+#       block:
+#         - name: "BACKUP ORIGINAL"
+#           copy:
+#             remote_src: yes
+#             src: /etc/dhcp/dhcpd.conf
+#             dest: /etc/dhcp/dhcpd.conf.bak
+#             mode: "0644"
+#         - name: "COPY dhcpd.conf"
+#           copy:
+#             src: files/dhcpd.conf
+#             dest: /etc/dhcp/dhcpd.conf
+#             mode: "0644"
+#         - name: "SET INTERFACE FOR ISC-DHCP-SERVER"
+#           lineinfile:
+#             path: /etc/default/isc-dhcp-server
+#             regexp: "^INTERFACESv4="
+#             line: INTERFACESv4="eth0"
 
-    - name: "TASK: ENABLE IPV4 FORWARDING"
-      sysctl:
-        name: net.ipv4.ip_forward
-        value: "1"
-        sysctl_set: yes
+#     - name: "TASK: ENABLE IPV4 FORWARDING"
+#       sysctl:
+#         name: net.ipv4.ip_forward
+#         value: "1"
+#         sysctl_set: yes
 
-    - name: "BLOCK TASK: ADD IPTABLES RULES"
-      block:
-        - name: "APPEND NAT MASQUERADE"
-          iptables:
-            table: nat
-            action: append
-            chain: POSTROUTING
-            out_interface: wlan0
-            jump: MASQUERADE
-        - name: "APPEND IN FROM WIFI TO ETH"
-          iptables:
-            action: append
-            chain: FORWARD
-            in_interface: wlan0
-            out_interface: eth0
-            ctstate: RELATED,ESTABLISHED
-            jump: ACCEPT
-        - name: "APPEND IN FROM ETH TO WIFI"
-          iptables:
-            action: append
-            chain: FORWARD
-            in_interface: eth0
-            out_interface: wlon0
-            jump: ACCEPT
-          notify: restart_device
-    - debug:
-        msg: >
-          "{% if restart_success.rebooted == true %} Restart '{{ inventory_hostname }}' 
-          successful. {% else %} Restart '{{ inventory_hostname }}' failed.{% endif %}"
+#     - name: "BLOCK TASK: ADD IPTABLES RULES"
+#       block:
+#         - name: "APPEND NAT MASQUERADE"
+#           iptables:
+#             table: nat
+#             action: append
+#             chain: POSTROUTING
+#             out_interface: wlan0
+#             jump: MASQUERADE
+#         - name: "APPEND IN FROM WIFI TO ETH"
+#           iptables:
+#             action: append
+#             chain: FORWARD
+#             in_interface: wlan0
+#             out_interface: eth0
+#             ctstate: RELATED,ESTABLISHED
+#             jump: ACCEPT
+#         - name: "APPEND IN FROM ETH TO WIFI"
+#           iptables:
+#             action: append
+#             chain: FORWARD
+#             in_interface: eth0
+#             out_interface: wlon0
+#             jump: ACCEPT
+#           notify: restart_device
+#     - debug:
+#         msg: >
+#           "{% if restart_success.rebooted == true %} Restart '{{ inventory_hostname }}' 
+#           successful. {% else %} Restart '{{ inventory_hostname }}' failed.{% endif %}"
 
-    - name: "TASK: WAIT FOR NODES DHCP-LEASING"
-      debug:
-        msg: > 
-          "please plug in the worker nodes one at a time, starting with 1st node, 
-          and waiting for an ip is assigned before proceeding."
-    - name: "wait for node 1"
-      wait_for:
-        path: /var/lib/dhcp/dhcpd.leases
-        search_regex: "{{ node_ip['1'] }}"
-    - debug:
-        msg: "node1 available, please plug in node2"
-    - name: "wait for node 2"
-      wait_for:
-        path: /var/lib/dhcp/dhcpd.leases
-        search_regex: "{{ node_ip['2'] }}"
-    - debug:
-        msg: "node2 available, please plug in node3"
-    - name: "wait for node 3"
-      wait_for:
-        path: /var/lib/dhcp/dhcpd.leases
-        search_regex: "{{ node_ip['3'] }}"
-    - debug:
-        msg: "node3 available, all nodes online"
+#     - name: "TASK: WAIT FOR NODES DHCP-LEASING"
+#       debug:
+#         msg: > 
+#           "please plug in the worker nodes one at a time, starting with 1st node, 
+#           and waiting for an ip is assigned before proceeding."
+#     - name: "wait for node 1"
+#       wait_for:
+#         path: /var/lib/dhcp/dhcpd.leases
+#         search_regex: "{{ node_ip['1'] }}"
+#     - debug:
+#         msg: "node1 available, please plug in node2"
+#     - name: "wait for node 2"
+#       wait_for:
+#         path: /var/lib/dhcp/dhcpd.leases
+#         search_regex: "{{ node_ip['2'] }}"
+#     - debug:
+#         msg: "node2 available, please plug in node3"
+#     - name: "wait for node 3"
+#       wait_for:
+#         path: /var/lib/dhcp/dhcpd.leases
+#         search_regex: "{{ node_ip['3'] }}"
+#     - debug:
+#         msg: "node3 available, all nodes online"
 
 - name: "PLAY 3: TEST NODES FOR SSH & SUDO PERMISSIONS"
   hosts: 127.0.0.1
   connection: local
   gather_facts: false
   vars_files: defaults/bootstrap.yaml
-  tags: test
 
   tasks:
   - name: "TASK: IMPORT TEST TASKS"
     import_tasks: tasks/access-test.yaml
     vars:
-      host_ip: "{{ node_ip['1'] }}"
+      host_ip: 192.168.96.9
+      gateway_bootstrap: false
       
-  - name: "TASK: IMPORT TEST TASKS"
-    import_tasks: tasks/access-test.yaml
-    vars:
-      host_ip: "{{ node_ip['2'] }}"         
+  # - name: "TASK: IMPORT TEST TASKS"
+  #   import_tasks: tasks/access-test.yaml
+  #   vars:
+  #     host_ip: "{{ node_ip['2'] }}"
+  #     gateway_bootstrap: false         
 
-  - name: "TASK: IMPORT TEST TASKS"
-    import_tasks: tasks/access-test.yaml
-    vars:
-      host_ip: "{{ node_ip['3'] }}"
+  # - name: "TASK: IMPORT TEST TASKS"
+  #   import_tasks: tasks/access-test.yaml
+  #   vars:
+  #     host_ip: "{{ node_ip['3'] }}"
+  #     gateway_bootstrap: false
 
-- name: "PLAY: BASIC OS SETUP"
-  hosts: all
-  become: true
-  gather_facts: true
+# - name: "PLAY: BASIC OS SETUP"
+#   hosts: all
+#   become: true
+#   gather_facts: true
+#   force_handlers: true
+#   handlers:
+#   - import_tasks: handlers/main.yaml
 
-  tasks:
-  - name: "TASK: SET HOSTNAME"
-    hostname:
-      name: "{{ inventory_hostname }}"
+  # tasks:
+  # - name: "TASK: SET HOSTNAME"
+  #   hostname:
+  #     name: "{{ inventory_hostname }}"
 
-  - name: "TASK: WRITE HOSTS FILE"
-    template:
-      src: templates/hosts.j2
-      dest: /etc/hosts
-      owner: root
-      group: root
-      mode: '0644'
+  # - name: "TASK: WRITE HOSTS FILE"
+  #   template:
+  #     src: templates/hosts.j2
+  #     dest: /etc/hosts
+  #     owner: root
+  #     group: root
+  #     mode: '0644'
 
-  - name: "UPDATE DISTRO AND PACKAGES"
-    apt:
-      update_cache: yes
-      upgrade: full
-    handler: restart_device
-  - debug:
-        msg: >
-          "{% if restart_success.rebooted == true %} Restart '{{ inventory_hostname }}' 
-          successful. {% else %} Restart '{{ inventory_hostname }}' failed.{% endif %}"
+  # - name: "UPDATE DISTRO AND PACKAGES"
+  #   apt:
+  #     update_cache: yes
+  #     upgrade: full
+  #   notify: restart_device

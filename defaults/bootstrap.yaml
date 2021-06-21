@@ -1,9 +1,9 @@
 # The initial access point for the controller
 con_pass: debpi
-con_wifi: 10.1.1.33
+gateway_ip: 10.1.1.33
 
 # Define a user to act as ansible controller
-user_name: pampywamp
+user_name: ansible
 ansible_pass: ansibian
 
 node_ip:
