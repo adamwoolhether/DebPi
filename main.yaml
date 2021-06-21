@@ -157,7 +157,7 @@
   - name: IMPORT ANSIBLE USER TASKS
     import_tasks: tasks/ansible-user.yaml
 
-- name: "PLAY: BASIC OS SETUP"
+- name: "PLAY: SYNCHRONIZE CONTROLLER AND HOSTS"
   hosts: all
   become: true
   gather_facts: true

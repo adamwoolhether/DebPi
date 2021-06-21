@@ -3,11 +3,6 @@
     name: sshpass
     state: present
 
-# - name: GENERATE SSH ID FOR ROOT
-#   user:
-#     name: root
-#     generate_ssh_key: yes
-
 - name: COPY SSH KEYS TO ROOT FROM ANSIBLE AND ROOT USER
   shell: >
     {% for host in groups ['node'] %}
