@@ -1,28 +1,28 @@
-  - name: "ACCESS TEST FOR SSH CAPABILITY FOR HOST: {{ host_ip }}"
+  - name: "TEST ANSIBLE USER SSH ACCESS FOR: {{ host_ip }}"
     shell: >
-      {% if gateway_bootstrap == true %}ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=accept-new {{ user_name }}@{{ host_ip }} 'whoami'
-      {% else %}ssh -J root@'{{ gateway_ip }}' -o PasswordAuthentication=no -o StrictHostKeyChecking=accept-new {{ user_name }}@{{ host_ip }} 'whoami'
+      {% if gateway_bootstrap == true %}ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=accept-new {{ user_name }}@{{ host_ip }} 'sudo whoami'
+      {% else %}ssh -J ansible@{{ gateway_ip }} -o PasswordAuthentication=no -o StrictHostKeyChecking=accept-new {{ user_name }}@{{ host_ip }} 'sudo whoami'
       {% endif %}
-    register: ssh_access_ok
+    register: ansible_ssh_access
     ignore_errors: true
     changed_when: false
   - debug:
-      msg: "return code: {{ ssh_access_ok.rc }} for whoami: {{ ssh_access_ok.stdout }}"
-      
-  - name: "INCLUDE BOOTSRAP TASKS"
-    include_tasks: access-bootstrap.yaml
-    when: ssh_access_ok.rc != 0
+      msg: "return code: {{ ansible_ssh_access.rc }} for whoami: {{ ansible_ssh_access.stdout }}"
 
-  - name: "TEST USER {{ user_name }} SSH CAPABILITY FOR HOST: {{ host_ip }}"
+  - name: "TEST ROOT SSH ACCESS FOR: {{ host_ip }}"
     shell: >
-      {% if gateway_bootstrap == true %}ssh {{ user_name }}@{{ host_ip }} 'sudo whoami'
-      {% else %}ssh -J root@{{ gateway_ip }} {{ user_name }}@{{ host_ip }} 'sudo whoami'
+      {% if gateway_bootstrap == true %}ssh -o PasswordAuthentication=no root@{{ host_ip }} 'sudo whoami'
+      {% else %}ssh -J ansible@{{ gateway_ip }} -o PasswordAuthentication=no root@{{ host_ip }} 'sudo whoami'
       {% endif %}
-    register: sudo_ok
+    register: root_ssh_access
     ignore_errors: true
     changed_when: false
-  - debug:
-      msg: "return code: {{ sudo_ok.rc }} for sudo whoami: {{ sudo_ok.stdout }}"
-  - name: "INCLUDE BOOTSRAP SUDO"
-    include_tasks: access-bootstrap-sudo.yaml
-    when: sudo_ok.rc != 0
+    when: ansible_ssh_access.rc != 0
+      
+  - name: "COPY SSH-KEYS TO ROOT ACCOUNT"
+    shell: >
+      {% if gateway_bootstrap == true %}sshpass -p {{ con_pass }} ssh-copy-id -i ~/.ssh/id_rsa.pub -o StrictHostKeyChecking=no root@{{ host_ip }}
+      {% else %}sshpass -p {{ con_pass }} ssh-copy-id -i ~/.ssh/id_rsa.pub -o ProxyJump=ansible@{{ gateway_ip }} -o StrictHostKeyChecking=no root@{{ host_ip }}
+      {% endif %}
+    when: ansible_ssh_access.rc != 0 and root_ssh_access.rc != 0
+  

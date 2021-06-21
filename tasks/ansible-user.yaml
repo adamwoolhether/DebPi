@@ -1,0 +1,51 @@
+# - name: SET ANSIBLE ACCOUNT PASSWORD
+#   debug: 
+#     msg: "{{ '{{ ansible_pass }}' | password_hash('sha512','saltyshaker789') }}"
+#   register: ansible_pw
+# - name: CHECK ANSIBLE USER PW
+#   debug:
+#     var: ansible_pw
+
+- name: ADD ANSIBLE USER
+  user:
+    name: ansible
+    # password: "{{ '{{ ansible_pass }}' | password_hash('sha512','saltyshaker789') }}"
+    shell: /bin/bash
+    generate_ssh_key: yes
+    ssh_key_bits: 2048
+  register: user_add
+- debug:
+    var: user_add
+
+- name: SET PASSWD (IDEMPOTENT METHOD NOT WORKING)
+  expect:
+    command: passwd ansible
+    responses:
+      "New password:": "{{ ansible_pass }}"
+      "Retype new password:": "{{ ansible_pass }}"
+  when: user_add.changed == true
+
+- name: ALLOW ANSIBLE USER SSH ACCESS
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regex: '^#AllowUsers'
+    line: 'AllowUsers ansible root'
+    state: present
+  notify: restart_sshd
+
+- name: INSTALL SUDO
+  apt:
+    name: sudo
+    update_cache: yes
+
+- name: ADD ANSIBLE SUDOERS.D
+  lineinfile:
+    path: /etc/sudoers.d/ansible
+    line: 'ansible ALL=(ALL:ALL) NOPASSWD:ALL'
+    state: present
+    create: true
+
+- name: COPY SSH KEYS TO ANSIBLE ACCOUNT
+  authorized_key:
+    user: ansible
+    key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"

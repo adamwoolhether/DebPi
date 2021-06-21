@@ -1,5 +1,0 @@
-  - name: "INSTALL SUDO AND ADD {{ user_name }} TO SUDOERS"
-    shell: >
-      {% if gateway_bootstrap == true %}ssh root@{{ gateway_ip }} 'apt update && apt-get install sudo && echo echo "{{ user_name }} ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/{{ user_name }}'
-      {% else%}ssh -J root@{{ gateway_ip }} root@{{ host_ip }} 'apt update && apt-get install sudo && echo "{{ user_name }} ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/{{ user_name }}'
-      {% endif %}s
