@@ -5,10 +5,3 @@ gateway_ip: 10.1.1.33
 # Define a user to act as ansible controller
 user_name: ansible
 ansible_pass: ansibian
-
-node_ip:
-  '0': 192.168.1.100
-  '1': 192.168.1.101
-  '2': 192.168.1.102
-  '3': 192.168.1.103
-

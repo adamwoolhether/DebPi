@@ -1,0 +1,7 @@
+- name: WAITING FOR NODE {{ ansible_host }} CONNECTION
+  wait_for:
+    path: /var/lib/dhcp/dhcpd.leases
+    search_regex: "{{ ansible_host }}"
+- name: NOTIFY NEXT CONNECTION
+  debug:
+    msg: "{{ ansible_host }} available, please connect next node"

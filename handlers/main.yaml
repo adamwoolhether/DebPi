@@ -7,4 +7,3 @@
   reboot:
     msg: reboot initiated
     test_command: whoami
-  

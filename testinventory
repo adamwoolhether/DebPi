@@ -1,8 +1,8 @@
 [controller]
-test-master ansible_host=192.168.96.12
+test-master ansible_host=10.1.1.25
 
 [node]
-test-slave ansible_host=192.168.96.14
+test-slave ansible_host=10.1.1.26
 
 [all:children]
 controller
