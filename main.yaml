@@ -20,7 +20,7 @@
   tasks:
   - name: IMPORT ANSIBLE USER TASKS
     import_tasks: tasks/ansible-user.yaml
-  - name: IMPORT BOOTSTRAP NODES TASKS
+  - name: IMPORT BOOTSTRAP NODES PREP
     import_tasks: tasks/bootstrap-node-prep.yaml
 
 - name: BOOTSTRAP NODES
