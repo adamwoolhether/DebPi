@@ -1,3 +1,1 @@
-# ansible_ssh_common_args: '-o ProxyCommand="ssh -W %h:%p -q ansible@debpicon"'
-ansible_python_interpreter: /usr/bin/python3.7
-ansible_ssh_common_args: '-o ProxyCommand="ssh -W %h:%p -q ansible@{{ gateway_ip }}"'
+ansible_ssh_common_args: '-o ProxyCommand="ssh -W %h:%p -q {{ user_name }}@{{ gateway_ip }}"'

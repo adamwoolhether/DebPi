@@ -1,0 +1,89 @@
+- name: ENABLE NECESSARY LINUX MODULES
+  modprobe:
+    name: "{{ item }}"
+  loop:
+  - overlay
+  - br_netfilter
+
+- name: ENSURE MODULES PERSISTENT ACROSS REBOOT
+  blockinfile:
+    path: /etc/modules-load.d/modules.conf
+    block: |
+      overlay
+      br_netfilter
+
+# - name: ENABLE FIREWALL MASQUERADE
+#   firewalld:
+#     masquerade: yes
+#     permanent: yes
+#     immediate: yes
+
+- name: CONFIGURE BRIDGED PACKEDS TO TRAVERSE IPTABLES FIREWALL
+  sysctl:
+    name: "{{ item }}"
+    value: "1"
+    sysctl_set: yes
+  loop: 
+  - net.bridge.bridge-nf-call-iptables
+  - net.ipv4.ip_forward
+  - net.bridge.bridge-nf-call-ip6tables
+
+# - name: CHECK IF SWAP IS ON
+#   command: swapon --show
+#   register: swap_status
+#   changed_when: false
+# # - debug:
+# #     var: swap_status
+
+- name: DISABLE SWAP
+  block:
+  - name: TURN SWAP OFF
+    command: swapoff -a
+    changed_when: false
+  
+  - name: COMMENT OUT SWAP IN FSTAB
+    replace:
+      path: /etc/fstab
+      regexp: ^(\s*)([^#\n]+\s+)(\w+\s+)swap(\s+.*)$
+      replace: '#\1\2\3swap\4'
+    register: fstab_result
+  when: ansible_swaptotal_mb > 0  
+
+# - name: SET SELINUX TO PERMISSIVE
+#   selinux:
+#     state: permissive
+#     policy: targeted
+
+- name: ADD K8S PACKAGE KEYS
+  apt_key:
+    url: "{{ k8s_apt_key }}"
+    state: present
+
+- name: ADD K8S PACKAGE REPOSITORIES
+  apt_repository:
+    repo: "{{ k8s_apt_repo }}"
+    state: present
+
+- name: INSTALL K8S PACKAGES
+  include_tasks: apt.yaml
+  vars:
+    package_list: "{{ k8s_packages }}"
+  register: k8s_packages_result
+
+- name: PIN K8S PACKAGES VERSIONS
+  dpkg_selections:
+    selection: hold
+    name: "{{ item }}"
+  loop: "{{ k8s_packages }}"
+
+- name: REBOOT DEVICES IF NEEDED
+  reboot:
+    msg: reboot initiated
+    test_command: whoami
+  when: fstab_result.changed == true or k8s_packages_result.changed == true
+
+- name: START & ENABLE KUBELET SERVICE
+  systemd:
+    name: kubelet
+    state: started
+    enabled: yes

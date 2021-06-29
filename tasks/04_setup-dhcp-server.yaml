@@ -1,6 +1,5 @@
 - name: "INSTALL ISC-DHCP-SERVER"
   apt:
-    update_cache: yes
     name: isc-dhcp-server
 
 - name: CONFIGURE eth0 INTERFACE
@@ -11,9 +10,10 @@
         src: /etc/network/interfaces.d/eth0
         dest: /etc/network/interfaces.d/eth0.bak
         mode: "0644"
+      ignore_errors: true
     - name: "COPY CONFIURATION"
       copy:
-        src: files/eth0
+        src: templates/eth0
         dest: /etc/network/interfaces.d/eth0
         mode: "0644"
 
@@ -27,7 +27,7 @@
         mode: "0644"
     - name: COPY dhcpd.conf
       copy:
-        src: files/dhcpd.conf
+        src: templates/dhcpd.conf
         dest: /etc/dhcp/dhcpd.conf
         mode: "0644"
     - name: SET INTERFACE FOR ISC-DHCP-SERVER

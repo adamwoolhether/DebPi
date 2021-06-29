@@ -1,0 +1,17 @@
+- name: CHECK FOR EXISTING KUBELET CONF
+  stat:
+    path: /etc/kubernetes/kubelet.conf
+  register: kubelet_check
+# - debug:
+#     var: kubelet_check
+
+- name: CHECK FOR EXISTING PKI CERT
+  stat:
+    path: /etc/kubernetes/pki/ca.crt
+  register: crt_check
+# - debug: 
+#     var: crt_check
+
+- name: JOIN THE CLUSTER
+  shell: "{{ hostvars['test-master']['kubeadm_join_cmd'] }}"
+  when: kubelet_check.stat.exists != true or crt_check.stat.exists != true

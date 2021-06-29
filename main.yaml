@@ -2,10 +2,10 @@
   hosts: 127.0.0.1
   connection: local
   gather_facts: false
-  vars_files: defaults/bootstrap.yaml
+  vars_files: defaults/main.yaml
   tasks:
-  - name: IMPORT ACCESS TEST
-    import_tasks: tasks/access-test.yaml
+  - name: IMPORT ACCESS TEST & COPY SSH KEYS TASKS
+    import_tasks: tasks/01_access-test.yaml
     vars:
       gateway_bootstrap: true
       host_ip: "{{ gateway_ip }}"
@@ -14,76 +14,93 @@
   hosts: controller
   gather_facts: true
   remote_user: root
-  vars_files: defaults/bootstrap.yaml
+  vars_files: defaults/main.yaml
   handlers:
     - import_tasks: handlers/main.yaml
   tasks:
-  - name: IMPORT ANSIBLE USER TASKS
-    import_tasks: tasks/ansible-user.yaml
-  - name: IMPORT BOOTSTRAP NODES PREP
-    import_tasks: tasks/bootstrap-node-prep.yaml
+  - name: IMPORT {{ user_name }} USER TASKS
+    import_tasks: tasks/02_ansible-user.yaml
+  - name: IMPORT BOOTSTRAP NODES PREP TASKS
+    import_tasks: tasks/03_bootstrap-node-prep.yaml
 
-- name: BOOTSTRAP NODES
-  hosts: node
-  gather_facts: false
-  vars_files: defaults/bootstrap.yaml
-  tasks:
-  - name: PHYSICAL CONNECTION MSG
-    debug:
-      msg: > 
-        "please connect worker nodes to switch one at a time. 
-        start with first node, wait for IP to assigned before connection the next node"
-  # - name: MANUALLY ADD NODES' PHYSICAL ETHERNET CONNECTION
-  #   import_tasks: tasks/dhcp-lease.yaml
-  #   delegate_to: "{{ groups['controller'][0] }}"
-
-  - name: IMPORT ACCESS TEST
-    import_tasks: tasks/access-test.yaml
-    vars:
-      gateway_bootstrap: false
-      host_ip: "{{ ansible_host }}"
-    delegate_to: 127.0.0.1
-
-- name: SETUP ANSIBLE ACCOUNT ON NODES
-  hosts: node
+- name: SETUP DHCP SERVER ON CONTROLLER
+  hosts: controller
   gather_facts: true
-  remote_user: root
-  vars_files: defaults/bootstrap.yaml
-  handlers:
-    - import_tasks: handlers/main.yaml
-  tasks:
-  - name: IMPORT ANSIBLE USER TASKS
-    import_tasks: tasks/ansible-user.yaml
-
-- name: SYNCHRONIZE DEVICES & PREPARE OS FOR K8s
-  hosts: all
   become: true
-  gather_facts: true
-  force_handlers: true
+  vars_files: defaults/main.yaml
   handlers:
-  - import_tasks: handlers/main.yaml
-
+    - import_tasks: handlers/main.yaml
   tasks:
-  - name: "SET HOSTNAME"
-    hostname:
-      name: "{{ inventory_hostname }}"
+  - name: IMPORT SETUP DHCP SERVER TASKS
+    import_tasks: tasks/04_setup-dhcp-server.yaml
 
-  - name: "WRITE HOSTS FILE"
-    template:
-      src: templates/hosts.j2
-      dest: /etc/hosts
-      owner: root
-      group: root
-      mode: '0644'
+# - name: BOOTSTRAP NODES
+#   hosts: node
+#   gather_facts: false
+#   vars_files: defaults/main.yaml
+#   tasks:
+#   - name: PHYSICAL CONNECTION MSG
+#     debug:
+#       msg: > 
+#         "please connect worker nodes to switch one at a time. 
+#         start with first node, wait for IP to assigned before connection the next node"
+#   - name: MANUALLY ADD NODES' PHYSICAL ETHERNET CONNECTION
+#     import_tasks: tasks/dhcp-lease.yaml
+#     delegate_to: "{{ groups['controller'][0] }}"
 
-  - name: "UPDATE DISTRO AND PACKAGES"
-    apt:
-      update_cache: yes
-      upgrade: full
-    notify: restart_device
-  
-#   - name: SYNC CLOCKS
+#   - name: IMPORT ACCESS TEST
+#     import_tasks: tasks/01_access-test.yaml
+#     vars:
+#       gateway_bootstrap: false
+#       host_ip: "{{ ansible_host }}"
+#     delegate_to: 127.0.0.1
 
-# - name: CONFIGURE EXTERNAL STORAGE
+# - name: SETUP ANSIBLE ACCOUNT ON NODES
+#   hosts: node
+#   gather_facts: true
+#   remote_user: root
+#   vars_files: defaults/main.yaml
+#   handlers:
+#     - import_tasks: handlers/main.yaml
+#   tasks:
+#   - name: IMPORT ANSIBLE USER TASKS
+#     import_tasks: tasks/02_ansible-user.yaml
 
-# - name: INSTALL K8S
+# - name: SYNCHRONIZE DEVICES & PREPARE OS FOR K8s
+#   hosts: all
+#   become: true
+#   gather_facts: true
+#   # force_handlers: true
+#   vars_files: defaults/main.yaml
+#   handlers:
+#   - import_tasks: handlers/main.yaml
+
+#   tasks:
+#   - name: 
+#     import_tasks: tasks/os-setup.yaml
+
+#   - name: INCLUDE CRIO INSTALL TASKS
+#     include_tasks: tasks/crio-install.yaml
+
+#   - name: INCLUDE K8s INSTALL TASKS
+#     include_tasks: tasks/k8s-install.yaml
+
+# - name: INIT K8S MASTER NODE
+#   hosts: controller
+#   become: true
+#   vars_files: defaults/main.yaml
+
+#   tasks:
+#   - name: INCLUDE KUBEADM MASTER NDOE TASKS
+#     include_tasks: tasks/kubeadm-master.yaml
+
+# - name: INIT K8S WORKER NODES
+#   hosts: node
+#   become: true
+#   vars_files: defaults/main.yaml
+
+#   tasks: 
+#   - name: INCLUDE KUBEADM WORKER NODE TASKS
+#     include_tasks: tasks/kubeadm-worker.yaml
+
+# # # - name: CONFIGURE EXTERNAL STORAGE

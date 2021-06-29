@@ -1,0 +1,76 @@
+- name: CHECK IF IMAGES PRESENT
+  shell: crictl images
+  # shell: kubeadm config images list
+  register: images_check
+  changed_when: false
+# - debug:
+#     var: images_check  
+
+- name: PULL THE INIT IMAGES
+  shell: kubeadm config images pull
+  when: >
+    images_check.stdout.find('coredns') == -1 or images_check.stdout.find('etcd') == -1
+    or images_check.stdout.find('kube-apiserver') == -1 or images_check.stdout.find('kube-controller-manager') == -1
+    or images_check.stdout.find('kube-proxy') == -1 or images_check.stdout.find('kube-scheduler') == -1
+    or images_check.stdout.find('pause') == -1
+
+# - name: SETUP FIREWALL FOR OTHER NODES
+# - name: SETUP FIREWALL FOR CONTAINER DAEMON
+# - name: EDIT HOSTS???
+
+- name: COPY KUBEADM CONFIG FILE
+  template:
+    src: templates/kubeadm-config.j2
+    dest: $HOME/kubeadm-config.yaml
+    mode: '0644'
+
+- name: CHECK FOR EXISTING CLUSTER
+  command: kubectl cluster-info
+  register: cluster_info
+  ignore_errors: true
+  changed_when: false
+# - debug: 
+#     var: cluster_info
+
+
+- name: RUN KUBEADM INIT WITH CONFIG FILE
+  shell: kubeadm init --config $HOME/kubeadm-config.yaml --ignore-preflight-errors=NumCPU
+  register: kubeadm_init_result
+  when: cluster_info.stdout.find('is running at') == -1 and cluster_info.stdout.find('ansible_host') == -1
+
+- name: CREATE .kube DIR
+  # become_user: ansible
+  file:
+    path: $HOME/.kube
+    state: directory
+    mode: '0755'
+
+- name: COPY admin.conf TO USER'S DIR
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: $HOME/.kube/config
+    remote_src: yes
+    # owner: $LOGNAME
+
+- name: RESTART KUBELET SERVICE
+  service:
+    name: kubelet
+    state: restarted
+  when: kubeadm_init_result.changed == true
+
+- name: INSTALL CALICO CNI
+  shell: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+  register: calico_result
+  when: >
+    images_check.stdout.find('calico/cni') == -1 or images_check.stdout.find('calico/kube-controllers') == -1
+    or images_check.stdout.find('calico/node') == -1 or images_check.stdout.find('calico/pod2daemon-flexvol') == -1
+
+- name: GET NODE JOIN COMMAND
+  command: kubeadm token create --print-join-command
+  register: kubeadm_join
+  changed_when: false
+
+- name: SET FACT FOR HOST USE
+  set_fact: 
+    kubeadm_join_cmd: "{{ kubeadm_join.stdout }}"
+    cacheable: yes

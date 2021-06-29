@@ -1,0 +1,47 @@
+# The initial access point for the controller
+con_pass: debpi
+gateway_ip: 10.1.1.33
+
+# Define a user account for Ansible to use
+user_name: ansible
+ansible_pass: ansibian
+
+# Networking setup for DHCP
+dhcp_subnet: 192.168.1.0
+dhcp_netmask: 255.255.255.0
+dhcp_range_lower: 192.168.1.101
+dhcp_range_upper: 192.168.1.254
+dhcp_broadcast: 192.168.1.255
+dhcp_router: 192.168.1.100
+dhcp_gateway: 192.168.1.1
+
+base_packages:
+- bash-completion
+- vim
+
+crio_version: '1.21'
+crio_package: "Debian_10"
+crio_apt_repos:
+- "deb http://deb.debian.org/debian buster-backports main"
+- "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/{{ crio_package }}/ /"
+- "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/{{ crio_version }}/{{ crio_package }}/ /"
+crio_apt_keys:
+- "https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:{{ crio_version }}/{{ crio_package }}/Release.key"
+- "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/{{ crio_package }}/Release.key"
+crio_packages:
+- cri-o
+- cri-o-runc
+use_distro_runc: false
+
+k8s_cluster_name: DebpiK8s
+k8s_version: 1.21.2
+k8s_apt_repo: "deb http://apt.kubernetes.io/ kubernetes-xenial main"
+k8s_apt_key: "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
+k8s_packages:
+- kubelet
+- kubeadm
+- kubectl
+
+k8s_pod_network:
+  cni: "calico"
+  pod_subnet: '10.244.0.0/16'

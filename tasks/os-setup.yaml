@@ -1,0 +1,34 @@
+- name: SET HOSTNAME
+  hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: "WRITE HOSTS FILE"
+  template:
+    src: ../templates/hosts.j2
+    dest: /etc/hosts
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: UPGRADE DISTRO & PACKAGES
+  apt:
+    update_cache: yes
+    upgrade: full
+
+- name: INSTALL DESIRED OS PACKAGES
+  include_tasks: apt.yaml
+  vars:
+    package_list: "{{ base_packages }}"
+
+- name: ENABLE KUBECTL AUTOCOMPLETION FOR BASH
+  blockinfile:
+    path: $HOME/.bashrc
+    block: |
+      source <(kubectl completion bash)
+      alias k=kubectl
+      complete -F __start_kubectl k
+# - name: ADD COMPLETION SCRIPT TO BASH-COMPLETION
+#   lineinfile:
+#     path: /etc/bash_completion.d/kubectl
+#     line: kubectl completion bash
+#     create: true

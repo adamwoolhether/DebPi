@@ -1,14 +1,12 @@
 [controller]
-test-master ansible_host=10.1.1.25
+test-master ansible_host=192.168.96.12
 
 [node]
-test-slave ansible_host=10.1.1.26
+test-slave ansible_host=192.168.96.14
 
 [all:children]
 controller
 node
-[all:vars]
-ansible_python_interpreter=/usr/bin/python3.7
 
 [gatewayed:children]
 node

@@ -1,0 +1,7 @@
+auto eth0
+iface eth0 inet static
+    address {{ dhcp_router }}
+    netmask {{ dhcp_netmask }}
+    broadcast {{ dhcp_broadcast }}
+    gateway {{ dhcp_gateway }}
+    metric 90

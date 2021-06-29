@@ -1,7 +1,7 @@
   - name: "TEST ANSIBLE USER SSH ACCESS FOR: {{ host_ip }}"
     shell: >
       {% if gateway_bootstrap == true %}ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=accept-new {{ user_name }}@{{ host_ip }} 'sudo whoami'
-      {% else %}ssh -J ansible@{{ gateway_ip }} -o PasswordAuthentication=no -o StrictHostKeyChecking=accept-new {{ user_name }}@{{ host_ip }} 'sudo whoami'
+      {% else %}ssh -J {{ user_name }}@{{ gateway_ip }} -o PasswordAuthentication=no -o StrictHostKeyChecking=accept-new {{ user_name }}@{{ host_ip }} 'sudo whoami'
       {% endif %}
     register: ansible_ssh_access
     ignore_errors: true
@@ -12,7 +12,7 @@
   - name: "TEST ROOT SSH ACCESS FOR: {{ host_ip }}"
     shell: >
       {% if gateway_bootstrap == true %}ssh -o PasswordAuthentication=no root@{{ host_ip }} 'sudo whoami'
-      {% else %}ssh -J ansible@{{ gateway_ip }} -o PasswordAuthentication=no root@{{ host_ip }} 'sudo whoami'
+      {% else %}ssh -J {{ user_name }}@{{ gateway_ip }} -o PasswordAuthentication=no root@{{ host_ip }} 'sudo whoami'
       {% endif %}
     register: root_ssh_access
     ignore_errors: true
@@ -22,7 +22,7 @@
   - name: "COPY SSH-KEYS TO ROOT ACCOUNT"
     shell: >
       {% if gateway_bootstrap == true %}sshpass -p {{ con_pass }} ssh-copy-id -i ~/.ssh/id_rsa.pub -o StrictHostKeyChecking=no root@{{ host_ip }}
-      {% else %}sshpass -p {{ con_pass }} ssh-copy-id -i ~/.ssh/id_rsa.pub -o ProxyJump=ansible@{{ gateway_ip }} -o StrictHostKeyChecking=no root@{{ host_ip }}
+      {% else %}sshpass -p {{ con_pass }} ssh-copy-id -i ~/.ssh/id_rsa.pub -o ProxyJump={{ user_name }}@{{ gateway_ip }} -o StrictHostKeyChecking=no root@{{ host_ip }}
       {% endif %}
     when: ansible_ssh_access.rc != 0 and root_ssh_access.rc != 0
   

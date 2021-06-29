@@ -1,7 +1,0 @@
-# The initial access point for the controller
-con_pass: debpi
-gateway_ip: 10.1.1.33
-
-# Define a user to act as ansible controller
-user_name: ansible
-ansible_pass: ansibian
