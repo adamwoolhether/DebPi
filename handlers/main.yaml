@@ -1,9 +1,0 @@
-- name: restart_sshd
-  service:
-    name: sshd
-    state: restarted
-
-- name: restart_device
-  reboot:
-    msg: reboot initiated
-    test_command: whoami

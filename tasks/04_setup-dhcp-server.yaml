@@ -10,8 +10,9 @@
         src: /etc/network/interfaces.d/eth0
         dest: /etc/network/interfaces.d/eth0.bak
         mode: "0644"
+      changed_when: false
       ignore_errors: true
-    - name: "COPY CONFIURATION"
+    - name: "COPY CONFIGURATION"
       copy:
         src: templates/eth0
         dest: /etc/network/interfaces.d/eth0
@@ -25,6 +26,7 @@
         src: /etc/dhcp/dhcpd.conf
         dest: /etc/dhcp/dhcpd.conf.bak
         mode: "0644"
+      changed_when: false
     - name: COPY dhcpd.conf
       copy:
         src: templates/dhcpd.conf
@@ -66,3 +68,13 @@
         in_interface: eth0
         out_interface: wlon0
         jump: ACCEPT
+
+- name: INSTALL IPTABLES-PERSISTENT
+  apt:
+    name: iptables-persistent
+    state: present
+  register: iptables_persist
+
+- name: RUN IPTABLES-SAVE
+  shell: iptables-save
+  when: iptables_persist.changed == true

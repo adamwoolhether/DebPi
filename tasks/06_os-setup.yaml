@@ -2,7 +2,7 @@
   hostname:
     name: "{{ inventory_hostname }}"
 
-- name: "WRITE HOSTS FILE"
+- name: WRITE HOSTS FILE
   template:
     src: ../templates/hosts.j2
     dest: /etc/hosts
@@ -27,6 +27,7 @@
       source <(kubectl completion bash)
       alias k=kubectl
       complete -F __start_kubectl k
+## THIS INSTRUCTION IS GIVEN ON K8S SITE, BUT NOT NEEDED
 # - name: ADD COMPLETION SCRIPT TO BASH-COMPLETION
 #   lineinfile:
 #     path: /etc/bash_completion.d/kubectl

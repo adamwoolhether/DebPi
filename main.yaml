@@ -15,8 +15,8 @@
   gather_facts: true
   remote_user: root
   vars_files: defaults/main.yaml
-  handlers:
-    - import_tasks: handlers/main.yaml
+  # handlers:
+  #   - import_tasks: handlers/main.yaml
   tasks:
   - name: IMPORT {{ user_name }} USER TASKS
     import_tasks: tasks/02_ansible-user.yaml
@@ -28,79 +28,79 @@
   gather_facts: true
   become: true
   vars_files: defaults/main.yaml
-  handlers:
-    - import_tasks: handlers/main.yaml
+  # handlers:
+  #   - import_tasks: handlers/main.yaml
   tasks:
   - name: IMPORT SETUP DHCP SERVER TASKS
     import_tasks: tasks/04_setup-dhcp-server.yaml
 
-# - name: BOOTSTRAP NODES
-#   hosts: node
-#   gather_facts: false
-#   vars_files: defaults/main.yaml
-#   tasks:
-#   - name: PHYSICAL CONNECTION MSG
-#     debug:
-#       msg: > 
-#         "please connect worker nodes to switch one at a time. 
-#         start with first node, wait for IP to assigned before connection the next node"
-#   - name: MANUALLY ADD NODES' PHYSICAL ETHERNET CONNECTION
-#     import_tasks: tasks/dhcp-lease.yaml
-#     delegate_to: "{{ groups['controller'][0] }}"
+- name: BOOTSTRAP NODES
+  hosts: node
+  gather_facts: false
+  vars_files: defaults/main.yaml
+  tasks:
+  - name: PHYSICAL CONNECTION MSG
+    debug:
+      msg: > 
+        "please connect worker nodes to switch one at a time. 
+        start with first node, wait for IP to assigned before connection the next node"
+  - name: MANUALLY ADD NODES' PHYSICAL ETHERNET CONNECTION
+    import_tasks: tasks/05_dhcp-lease.yaml
+    delegate_to: "{{ groups['controller'][0] }}"
 
-#   - name: IMPORT ACCESS TEST
-#     import_tasks: tasks/01_access-test.yaml
-#     vars:
-#       gateway_bootstrap: false
-#       host_ip: "{{ ansible_host }}"
-#     delegate_to: 127.0.0.1
+  - name: IMPORT ACCESS TEST
+    import_tasks: tasks/01_access-test.yaml
+    vars:
+      gateway_bootstrap: false
+      host_ip: "{{ ansible_host }}"
+    delegate_to: 127.0.0.1
 
-# - name: SETUP ANSIBLE ACCOUNT ON NODES
-#   hosts: node
-#   gather_facts: true
-#   remote_user: root
-#   vars_files: defaults/main.yaml
-#   handlers:
-#     - import_tasks: handlers/main.yaml
-#   tasks:
-#   - name: IMPORT ANSIBLE USER TASKS
-#     import_tasks: tasks/02_ansible-user.yaml
+- name: SETUP ANSIBLE ACCOUNT ON NODES
+  hosts: node
+  gather_facts: true
+  remote_user: root
+  vars_files: defaults/main.yaml
+  # handlers:
+  #   - import_tasks: handlers/main.yaml
+  tasks:
+  - name: IMPORT ANSIBLE USER TASKS
+    import_tasks: tasks/02_ansible-user.yaml
 
-# - name: SYNCHRONIZE DEVICES & PREPARE OS FOR K8s
-#   hosts: all
-#   become: true
-#   gather_facts: true
-#   # force_handlers: true
-#   vars_files: defaults/main.yaml
-#   handlers:
-#   - import_tasks: handlers/main.yaml
+- name: SYNCHRONIZE DEVICES & PREPARE OS FOR K8s
+  hosts: all
+  become: true
+  gather_facts: true
+  # force_handlers: true
+  vars_files: defaults/main.yaml
+  # handlers:
+  # - import_tasks: handlers/main.yaml
 
-#   tasks:
-#   - name: 
-#     import_tasks: tasks/os-setup.yaml
+  tasks:
+  - name: IMPORT BASIC OS SETUP TASKS
+    import_tasks: tasks/06_os-setup.yaml
 
-#   - name: INCLUDE CRIO INSTALL TASKS
-#     include_tasks: tasks/crio-install.yaml
+  - name: INCLUDE CRIO INSTALL TASKS
+    include_tasks: tasks/07_crio-install.yaml
 
-#   - name: INCLUDE K8s INSTALL TASKS
-#     include_tasks: tasks/k8s-install.yaml
+  - name: INCLUDE K8s INSTALL TASKS
+    include_tasks: tasks/08_k8s-install.yaml
 
-# - name: INIT K8S MASTER NODE
-#   hosts: controller
-#   become: true
-#   vars_files: defaults/main.yaml
+- name: INIT K8S MASTER NODE
+  hosts: controller
+  become: true
+  vars_files: defaults/main.yaml
 
-#   tasks:
-#   - name: INCLUDE KUBEADM MASTER NDOE TASKS
-#     include_tasks: tasks/kubeadm-master.yaml
+  tasks:
+  - name: INCLUDE KUBEADM MASTER NDOE TASKS
+    include_tasks: tasks/09_kubeadm-master.yaml
 
-# - name: INIT K8S WORKER NODES
-#   hosts: node
-#   become: true
-#   vars_files: defaults/main.yaml
+- name: INIT K8S WORKER NODES
+  hosts: node
+  become: true
+  vars_files: defaults/main.yaml
 
-#   tasks: 
-#   - name: INCLUDE KUBEADM WORKER NODE TASKS
-#     include_tasks: tasks/kubeadm-worker.yaml
+  tasks: 
+  - name: INCLUDE KUBEADM WORKER NODE TASKS
+    include_tasks: tasks/10_kubeadm-worker.yaml
 
 # # # - name: CONFIGURE EXTERNAL STORAGE

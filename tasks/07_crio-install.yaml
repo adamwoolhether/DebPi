@@ -47,15 +47,15 @@
       cgroup_manager = "cgroupfs"
   register: cgroup_conf_result
 
-- name: REBOOT DEVICES IF NEEDED
-  reboot:
-    msg: reboot initiated
-    test_command: whoami
-  when: >
-    libsec_result.changed == true
-    or crio_packages_result.changed == true
-    or distro_runc_result.changed == true
-    or cgroup_conf_result == true
+# - name: REBOOT DEVICES IF NEEDED
+#   reboot:
+#     msg: reboot initiated
+#     test_command: whoami
+#   when: >
+#     libsec_result.changed == true
+#     or crio_packages_result.changed == true
+#     or distro_runc_result.changed == true
+#     or cgroup_conf_result == true
 
 - name: START & ENABLE CRI-O SERVICE
   systemd:

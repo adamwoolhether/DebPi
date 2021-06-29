@@ -1,6 +1,5 @@
 - name: CHECK IF IMAGES PRESENT
   shell: crictl images
-  # shell: kubeadm config images list
   register: images_check
   changed_when: false
 # - debug:
@@ -31,7 +30,6 @@
   changed_when: false
 # - debug: 
 #     var: cluster_info
-
 
 - name: RUN KUBEADM INIT WITH CONFIG FILE
   shell: kubeadm init --config $HOME/kubeadm-config.yaml --ignore-preflight-errors=NumCPU
@@ -70,7 +68,7 @@
   register: kubeadm_join
   changed_when: false
 
-- name: SET FACT FOR HOST USE
+- name: SET FACT FOR NODE USE
   set_fact: 
     kubeadm_join_cmd: "{{ kubeadm_join.stdout }}"
     cacheable: yes

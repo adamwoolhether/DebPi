@@ -32,7 +32,13 @@
     regex: '^#AllowUsers'
     line: 'AllowUsers {{ user_name }} root'
     state: present
-  notify: restart_sshd
+  register: ssh_access
+
+- name: RESTART SSHD
+  service:
+    name: sshd
+    state: restarted
+  when: ssh_access.changed == true
 
 - name: INSTALL SUDO
   apt:
