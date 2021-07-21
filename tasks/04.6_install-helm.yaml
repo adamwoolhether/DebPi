@@ -1,0 +1,21 @@
+  - name: GET HELM TAR
+    get_url:
+      url: "{{ helm_release }}"
+      dest: /tmp
+      checksum: "{{ helm_checksum }}"
+    register: helm_tar
+
+  - name: UPACK HELM BINARY
+    unarchive:
+      src: "{{ helm_tar.dest }}"
+      dest: /tmp
+      remote_src: true
+      list_files: true
+    register: helm_binary
+
+  - name: COPY BINARY TO BIN
+    copy:
+      src: /tmp/{{ helm_binary.files[1] }}
+      dest: /usr/local/bin/
+      mode: '0755'
+      remote_src: true

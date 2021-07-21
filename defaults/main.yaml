@@ -1,6 +1,6 @@
 # The initial access point for the controller
 con_pass: debpi
-gateway_ip: 10.1.1.33
+gateway_ip: 192.168.96.12
 
 # Define a user account for Ansible to use
 user_name: ansible
@@ -14,10 +14,12 @@ dhcp_range_upper: 192.168.1.254
 dhcp_broadcast: 192.168.1.255
 dhcp_router: 192.168.1.100
 dhcp_gateway: 192.168.1.1
+mac_address: ""
 
 base_packages:
 - bash-completion
 - vim
+- python3-pip
 
 crio_version: '1.21'
 crio_package: "Debian_10"
@@ -41,6 +43,38 @@ k8s_packages:
 - kubelet
 - kubeadm
 - kubectl
+
+helm_release: https://get.helm.sh/helm-v3.6.2-linux-amd64.tar.gz
+helm_checksum: sha256:https://get.helm.sh/helm-v3.6.2-linux-amd64.tar.gz.sha256sum
+helm_repos:
+- name: kubernetes-dashboard
+  url: https://kubernetes.github.io/dashboard/
+- name: bitnami
+  url: https://charts.bitnami.com/bitnami
+helm_charts:
+- release_name: k8s-dashboard
+  ref: kubernetes-dashboard/kubernetes-dashboard
+  namespace: k8s-dashboard
+  # values: "{{ lookup('template', 'files/k8s-dash-values.yaml') | from_yaml }}"
+  settings:
+    service.type: NodePort
+    ingress.enabled: true
+    metricsScraper.enabled: true
+    metrics-server.enabled: true
+- release_name: redis-k8s
+  ref: bitnami/redis
+  namespace: redis
+  settings:
+    global.redis.password: password
+    master.service.type: NodePort
+    replica.replicaCount: 3
+    master.service.port: 6380
+    master.containerPort: 6380
+
+
+#   release_name: kubernetes-dashboard
+#   release_namespace: kubernetes-dashboard
+
 
 k8s_pod_network:
   cni: "calico"

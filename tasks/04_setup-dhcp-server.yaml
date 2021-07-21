@@ -28,8 +28,8 @@
         mode: "0644"
       changed_when: false
     - name: COPY dhcpd.conf
-      copy:
-        src: templates/dhcpd.conf
+      template:
+        src: templates/dhcpd.j2
         dest: /etc/dhcp/dhcpd.conf
         mode: "0644"
     - name: SET INTERFACE FOR ISC-DHCP-SERVER

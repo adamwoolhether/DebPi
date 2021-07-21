@@ -15,11 +15,6 @@
     update_cache: yes
     upgrade: full
 
-- name: INSTALL DESIRED OS PACKAGES
-  include_tasks: apt.yaml
-  vars:
-    package_list: "{{ base_packages }}"
-
 - name: ENABLE KUBECTL AUTOCOMPLETION FOR BASH
   blockinfile:
     path: $HOME/.bashrc
@@ -33,3 +28,4 @@
 #     path: /etc/bash_completion.d/kubectl
 #     line: kubectl completion bash
 #     create: true
+
