@@ -4,4 +4,4 @@
     search_regex: "{{ ansible_host }}"
 - name: NOTIFY NEXT CONNECTION
   debug:
-    msg: "{{ ansible_host }} available, please connect next node"
+    msg: "{{ ansible_host }} connected successfully, please connect next node"

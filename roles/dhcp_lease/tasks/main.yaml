@@ -1,0 +1,8 @@
+- name: PHYSICAL CONNECTION MSG
+  debug:
+    msg: > 
+      "please connect worker nodes to switch one at a time. 
+      start with first node, wait for IP to assigned before connection the next node"
+- name: WAIT FOR NODE ETH CONNECTION
+  import_tasks: wait.yaml
+  delegate_to: "{{ groups['controller'][0] }}"

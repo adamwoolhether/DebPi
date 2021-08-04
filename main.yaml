@@ -3,197 +3,172 @@
   connection: local
   gather_facts: false
   vars_files: defaults/main.yaml
-  tasks:
-  - name: IMPORT ACCESS TEST & COPY SSH KEYS TASKS
-    import_tasks: tasks/01_access-test.yaml
-    vars:
-      gateway_bootstrap: true
-      host_ip: "{{ gateway_ip }}"
+  vars:
+    gateway_bootstrap: true
+    host_ip: "{{ gateway_ip }}"
+  roles:
+  - bootstrap_access
 
 - name: SETUP ANSIBLE ACCOUNT ON CONTROLLER
   hosts: controller
   gather_facts: true
   remote_user: root
   vars_files: defaults/main.yaml
-  # handlers:
-  #   - import_tasks: handlers/main.yaml
-  tasks:
-  - name: IMPORT {{ user_name }} USER TASKS
-    import_tasks: tasks/02_ansible-user.yaml
-  - name: IMPORT BOOTSTRAP NODES PREP TASKS
-    import_tasks: tasks/03_bootstrap-node-prep.yaml
+  roles:
+  - add_ansible_user
+  #MAYBE DON"T NEED THIS
+#   - name: IMPORT BOOTSTRAP NODES PREP TASKS
+#     import_tasks: tasks/03_bootstrap-node-prep.yaml
 
 - name: SETUP CONTROLLER
   hosts: controller
-  gather_facts: true
+  gather_facts: false
   become: true
   vars_files: defaults/main.yaml
-  # handlers:
-  #   - import_tasks: handlers/main.yaml
-  tasks:
-  - name: IMPORT SETUP DHCP SERVER TASKS
-    import_tasks: tasks/04_setup-dhcp-server.yaml
-  - name: INSTALL BASIC OS PACKAGES
-    import_tasks: tasks/04.5_basic-controller-packages.yaml
-  - name: INSTALL HELM
-    import_tasks: tasks/04.6_install-helm.yaml
+  roles:
+  - dhcp_server
+#   - name: INSTALL BASIC OS PACKAGES
+#     import_tasks: tasks/04.5_basic-controller-packages.yaml
+#   - name: INSTALL HELM
+#     import_tasks: tasks/04.6_install-helm.yaml
 
 - name: BOOTSTRAP NODES
   hosts: node
   gather_facts: false
-  vars_files: defaults/main.yaml
-  tasks:
-  - name: PHYSICAL CONNECTION MSG
-    debug:
-      msg: > 
-        "please connect worker nodes to switch one at a time. 
-        start with first node, wait for IP to assigned before connection the next node"
-  - name: MANUALLY ADD NODES' PHYSICAL ETHERNET CONNECTION
-    import_tasks: tasks/05_dhcp-lease.yaml
-    delegate_to: "{{ groups['controller'][0] }}"
-
-  - name: IMPORT ACCESS TEST
-    import_tasks: tasks/01_access-test.yaml
-    vars:
-      gateway_bootstrap: false
-      host_ip: "{{ ansible_host }}"
-    delegate_to: 127.0.0.1
-
-- name: SETUP ANSIBLE ACCOUNT ON NODES
-  hosts: node
-  gather_facts: true
   remote_user: root
   vars_files: defaults/main.yaml
-  # handlers:
-  #   - import_tasks: handlers/main.yaml
-  tasks:
-  - name: IMPORT ANSIBLE USER TASKS
-    import_tasks: tasks/02_ansible-user.yaml
+  vars:
+    gateway_bootstrap: false
+    host_ip: "{{ ansible_host }}"
+  roles:
+  - dhcp_lease
+  - bootstrap_access
+  - add_ansible_user
 
-- name: SYNCHRONIZE DEVICES & PREPARE OS FOR K8s
-  hosts: all
-  become: true
-  gather_facts: true
-  # force_handlers: true
-  vars_files: defaults/main.yaml
-  # handlers:
-  # - import_tasks: handlers/main.yaml
+# - name: SYNCHRONIZE DEVICES & PREPARE OS FOR K8s
+#   hosts: all
+#   become: true
+#   gather_facts: true
+#   # force_handlers: true
+#   vars_files: defaults/main.yaml
+#   # handlers:
+#   # - import_tasks: handlers/main.yaml
 
-  tasks:
-  - name: IMPORT BASIC OS SETUP TASKS
-    import_tasks: tasks/06_os-setup.yaml
+#   tasks:
+#   - name: IMPORT BASIC OS SETUP TASKS
+#     import_tasks: tasks/06_os-setup.yaml
 
-  - name: INCLUDE CRIO INSTALL TASKS
-    include_tasks: tasks/07_crio-install.yaml
+#   - name: INCLUDE CRIO INSTALL TASKS
+#     include_tasks: tasks/07_crio-install.yaml
 
-  - name: INCLUDE K8s INSTALL TASKS
-    include_tasks: tasks/08_k8s-install.yaml
+#   - name: INCLUDE K8s INSTALL TASKS
+#     include_tasks: tasks/08_k8s-install.yaml
 
-- name: INIT K8S MASTER NODE
-  hosts: controller
-  become: true
-  vars_files: defaults/main.yaml
+# - name: INIT K8S MASTER NODE
+#   hosts: controller
+#   become: true
+#   vars_files: defaults/main.yaml
 
-  tasks:
-  - name: INCLUDE KUBEADM MASTER NDOE TASKS
-    include_tasks: tasks/09_kubeadm-master.yaml
+#   tasks:
+#   - name: INCLUDE KUBEADM MASTER NDOE TASKS
+#     include_tasks: tasks/09_kubeadm-master.yaml
 
-- name: INIT K8S WORKER NODES
-  hosts: node
-  become: true
-  vars_files: defaults/main.yaml
+# - name: INIT K8S WORKER NODES
+#   hosts: node
+#   become: true
+#   vars_files: defaults/main.yaml
 
-  tasks: 
-  - name: INCLUDE KUBEADM WORKER NODE TASKS
-    include_tasks: tasks/10_kubeadm-worker.yaml
+#   tasks: 
+#   - name: INCLUDE KUBEADM WORKER NODE TASKS
+#     include_tasks: tasks/10_kubeadm-worker.yaml
 
-- name: INSTALL K8S MANIFESTS & HELM CHARTS
-  hosts: controller
-  become: true
-  vars_files: defaults/main.yaml
+# - name: INSTALL K8S MANIFESTS & HELM CHARTS
+#   hosts: controller
+#   become: true
+#   vars_files: defaults/main.yaml
 
-  tasks:
-  - name: SETUP DIR FOR MANIFESTS
-    file:
-      path: ~/manifests
-      state: directory
-      mode: '0755'
+#   tasks:
+#   - name: SETUP DIR FOR MANIFESTS
+#     file:
+#       path: ~/manifests
+#       state: directory
+#       mode: '0755'
 
-  - name: COPY MANIFESTS TO K8S MASTER
-    copy:
-      src: files/local-path-storage.yaml
-      dest: /local-path-storage.yaml
-      mode: '0755'
+#   - name: COPY MANIFESTS TO K8S MASTER
+#     copy:
+#       src: files/local-path-storage.yaml
+#       dest: /local-path-storage.yaml
+#       mode: '0755'
 
-  - name: APPLY LOCAL STORAGE PROVISIONER MANIGEST
-    kubernetes.core.k8s:
-      state: present
-      src: /local-path-storage.yaml
+#   - name: APPLY LOCAL STORAGE PROVISIONER MANIGEST
+#     kubernetes.core.k8s:
+#       state: present
+#       src: /local-path-storage.yaml
   
-  - name: SET LOCAL STORAGE PROVISIONER AS DEFAULT STORAGE CLASS
-    kubernetes.core.k8s:
-      definition:
-        apiVersion: storage.k8s.io/v1
-        kind: StorageClass
-        metadata:
-          name: local-path
-          annotations:
-            storageclass.kubernetes.io/is-default-class: "true"
+#   - name: SET LOCAL STORAGE PROVISIONER AS DEFAULT STORAGE CLASS
+#     kubernetes.core.k8s:
+#       definition:
+#         apiVersion: storage.k8s.io/v1
+#         kind: StorageClass
+#         metadata:
+#           name: local-path
+#           annotations:
+#             storageclass.kubernetes.io/is-default-class: "true"
 
-  - name: ADD HELM REPOS
-    kubernetes.core.helm_repository:
-      name: "{{ item.name }}"
-      repo_url: "{{ item.url }}"
-    loop: "{{ helm_repos }}"
+#   - name: ADD HELM REPOS
+#     kubernetes.core.helm_repository:
+#       name: "{{ item.name }}"
+#       repo_url: "{{ item.url }}"
+#     loop: "{{ helm_repos }}"
 
-  - name: INSTALL HELM CHARTS
-    kubernetes.core.helm:
-      release_name: "{{ item.release_name }}"
-      chart_ref: "{{ item.ref }}"
-      release_namespace: "{{ item.namespace }}"
-      values: "{{ item.settings }}"
-      create_namespace: true
-    loop: "{{ helm_charts }}"
+#   - name: INSTALL HELM CHARTS
+#     kubernetes.core.helm:
+#       release_name: "{{ item.release_name }}"
+#       chart_ref: "{{ item.ref }}"
+#       release_namespace: "{{ item.namespace }}"
+#       values: "{{ item.settings }}"
+#       create_namespace: true
+#     loop: "{{ helm_charts }}"
 
-## THE HELM MODULE IS NOT PROPERLY READING VALUES
-  - name: PATCH K8S DASHBOARD SERVICE TO NODEPORT
-    kubernetes.core.k8s:
-      definition:
-        apiVersion: v1
-        kind: Service
-        metadata:
-          name: k8s-dashboard-kubernetes-dashboard
-          namespace: k8s-dashboard
-        spec:
-          type: NodePort
-        ports:
-        - port: 443
-          protocol: TCP
-          targetPort: 8443
-          nodePort: 31033
+# ## THE HELM MODULE IS NOT PROPERLY READING VALUES
+#   - name: PATCH K8S DASHBOARD SERVICE TO NODEPORT
+#     kubernetes.core.k8s:
+#       definition:
+#         apiVersion: v1
+#         kind: Service
+#         metadata:
+#           name: k8s-dashboard-kubernetes-dashboard
+#           namespace: k8s-dashboard
+#         spec:
+#           type: NodePort
+#         ports:
+#         - port: 443
+#           protocol: TCP
+#           targetPort: 8443
+#           nodePort: 31033
   
-  # - name: CREATE SERVICE ACCOUNT AND ROLEBINDING FOR DASHBOARD ACCESS
+#   # - name: CREATE SERVICE ACCOUNT AND ROLEBINDING FOR DASHBOARD ACCESS
 
 
-  #   include_tasks: tasks/11_helm-charts.yaml
-  # - name: copy files
-  #   copy:
-  #     src: files/kubernetes-metrics-serverv0.5.0.yaml
-  #     dest: /kubernetes-metrics-serverv0.5.0.yaml
-  # - name: copy files
-  #   copy:
-  #     src: files/kubernetes-dashboadv2.3.1.yaml
-  #     dest: /kubernetes-dashboadv2.3.1.yaml
+#   #   include_tasks: tasks/11_helm-charts.yaml
+#   # - name: copy files
+#   #   copy:
+#   #     src: files/kubernetes-metrics-serverv0.5.0.yaml
+#   #     dest: /kubernetes-metrics-serverv0.5.0.yaml
+#   # - name: copy files
+#   #   copy:
+#   #     src: files/kubernetes-dashboadv2.3.1.yaml
+#   #     dest: /kubernetes-dashboadv2.3.1.yaml
 
 
-  # - name: APPLY K8S METRICS SERVER MANIFEST
-  #   kubernetes.core.k8s:
-  #     state: present
-  #     src: /kubernetes-metrics-serverv0.5.0.yaml
-  # - name: APPLY K8S DASHBOARD MANIFEST
-  #   kubernetes.core.k8s:
-  #     state: present
-  #     src: /kubernetes-dashboadv2.3.1.yaml
+#   # - name: APPLY K8S METRICS SERVER MANIFEST
+#   #   kubernetes.core.k8s:
+#   #     state: present
+#   #     src: /kubernetes-metrics-serverv0.5.0.yaml
+#   # - name: APPLY K8S DASHBOARD MANIFEST
+#   #   kubernetes.core.k8s:
+#   #     state: present
+#   #     src: /kubernetes-dashboadv2.3.1.yaml
 
     
-# # # # - name: CONFIGURE EXTERNAL STORAGE
+# # # # # - name: CONFIGURE EXTERNAL STORAGE

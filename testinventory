@@ -1,0 +1,13 @@
+[controller]
+test-master ansible_host=192.168.96.12
+
+[node]
+test-slave ansible_host=192.168.96.14
+
+[all:children]
+controller
+node
+
+[gatewayed:children]
+node
+

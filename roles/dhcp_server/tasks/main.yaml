@@ -14,7 +14,7 @@
       ignore_errors: true
     - name: "COPY CONFIGURATION"
       copy:
-        src: templates/eth0
+        src: files/eth0
         dest: /etc/network/interfaces.d/eth0
         mode: "0644"
 
@@ -73,8 +73,5 @@
   apt:
     name: iptables-persistent
     state: present
-  register: iptables_persist
-
-- name: RUN IPTABLES-SAVE
-  shell: iptables-save
-  when: iptables_persist.changed == true
+  notify:
+  - IPTABLES-SAVE

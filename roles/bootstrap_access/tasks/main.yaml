@@ -6,6 +6,7 @@
     register: ansible_ssh_access
     ignore_errors: true
     changed_when: false
+    delegate_to: 127.0.0.1
   - debug:
       msg: "return code: {{ ansible_ssh_access.rc }} for whoami: {{ ansible_ssh_access.stdout }}"
 
@@ -17,6 +18,7 @@
     register: root_ssh_access
     ignore_errors: true
     changed_when: false
+    delegate_to: 127.0.0.1
     when: ansible_ssh_access.rc != 0
       
   - name: "COPY SSH-KEYS TO ROOT ACCOUNT"
@@ -24,5 +26,6 @@
       {% if gateway_bootstrap == true %}sshpass -p {{ con_pass }} ssh-copy-id -i ~/.ssh/id_rsa.pub -o StrictHostKeyChecking=no root@{{ host_ip }}
       {% else %}sshpass -p {{ con_pass }} ssh-copy-id -i ~/.ssh/id_rsa.pub -o ProxyJump={{ user_name }}@{{ gateway_ip }} -o StrictHostKeyChecking=no root@{{ host_ip }}
       {% endif %}
+    delegate_to: 127.0.0.1
     when: ansible_ssh_access.rc != 0 and root_ssh_access.rc != 0
   

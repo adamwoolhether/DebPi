@@ -1,0 +1,2 @@
+- name: IPTABLES-SAVE
+  command: iptables-save
