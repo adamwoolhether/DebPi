@@ -61,15 +61,15 @@ helm_charts:
     ingress.enabled: true
     metricsScraper.enabled: true
     metrics-server.enabled: true
-- release_name: redis-k8s
-  ref: bitnami/redis
-  namespace: redis
-  settings:
-    global.redis.password: password
-    master.service.type: NodePort
-    replica.replicaCount: 3
-    master.service.port: 6380
-    master.containerPort: 6380
+# - release_name: redis-k8s
+#   ref: bitnami/redis
+#   namespace: redis
+#   settings:
+#     global.redis.password: password
+#     master.service.type: NodePort
+#     replica.replicaCount: 3
+#     master.service.port: 6380
+#     master.containerPort: 6380
 
 
 #   release_name: kubernetes-dashboard
