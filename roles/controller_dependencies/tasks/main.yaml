@@ -1,0 +1,16 @@
+- name: "INSTALL PACKAGES: {{ package_list }}"
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ base_packages }}"
+
+- name: INSTALL PIP DEPENDENCIES
+  pip:
+    name: openshift
+    state: present
+
+# - name: INSTALL PIP REQUESTS
+#   pip:
+
+- name: INSTALL HELM
+  include_tasks: helm.yaml

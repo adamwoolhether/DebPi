@@ -1,0 +1,4 @@
+- name: RESTART KUBELET SERVICE
+  service:
+    name: kubelet
+    state: restarted

@@ -12,6 +12,7 @@
       overlay
       br_netfilter
 
+# Save for when make centos 8 
 # - name: ENABLE FIREWALL MASQUERADE
 #   firewalld:
 #     masquerade: yes
@@ -28,6 +29,7 @@
   - net.ipv4.ip_forward
   - net.bridge.bridge-nf-call-ip6tables
 
+# for centos 8
 # - name: CHECK IF SWAP IS ON
 #   command: swapon --show
 #   register: swap_status
@@ -35,20 +37,20 @@
 # # - debug:
 # #     var: swap_status
 
-- name: DISABLE SWAP
-  block:
-  - name: TURN SWAP OFF
-    command: swapoff -a
-    changed_when: false
-  
   - name: COMMENT OUT SWAP IN FSTAB
     replace:
       path: /etc/fstab
       regexp: ^(\s*)([^#\n]+\s+)(\w+\s+)swap(\s+.*)$
       replace: '#\1\2\3swap\4'
-    register: fstab_result
-  when: ansible_swaptotal_mb > 0  
+  when: ansible_swaptotal_mb > 0 
 
+- name: DISABLE SWAP
+  block:
+  - name: TURN SWAP OFF
+    command: swapoff -a
+    changed_when: false 
+
+#for centos 8
 # - name: SET SELINUX TO PERMISSIVE
 #   selinux:
 #     state: permissive
@@ -69,18 +71,13 @@
   vars:
     package_list: "{{ k8s_packages }}"
   register: k8s_packages_result
+  notify: REBOOT
 
 - name: PIN K8S PACKAGES VERSIONS
   dpkg_selections:
     selection: hold
     name: "{{ item }}"
   loop: "{{ k8s_packages }}"
-
-- name: REBOOT DEVICES IF NEEDED
-  reboot:
-    msg: reboot initiated
-    test_command: whoami
-  when: fstab_result.changed == true or k8s_packages_result.changed == true
 
 - name: START & ENABLE KUBELET SERVICE
   systemd:

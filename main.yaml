@@ -26,11 +26,8 @@
   become: true
   vars_files: defaults/main.yaml
   roles:
+  - controller_dependencies
   - dhcp_server
-#   - name: INSTALL BASIC OS PACKAGES
-#     import_tasks: tasks/04.5_basic-controller-packages.yaml
-#   - name: INSTALL HELM
-#     import_tasks: tasks/04.6_install-helm.yaml
 
 - name: BOOTSTRAP NODES
   hosts: node
@@ -45,42 +42,30 @@
   - bootstrap_access
   - add_ansible_user
 
-# - name: SYNCHRONIZE DEVICES & PREPARE OS FOR K8s
-#   hosts: all
-#   become: true
-#   gather_facts: true
-#   # force_handlers: true
-#   vars_files: defaults/main.yaml
-#   # handlers:
-#   # - import_tasks: handlers/main.yaml
+- name: SYNCHRONIZE DEVICES & PREPARE OS FOR K8s
+  hosts: all
+  become: true
+  gather_facts: true
+  vars_files: defaults/main.yaml
 
-#   tasks:
-#   - name: IMPORT BASIC OS SETUP TASKS
-#     import_tasks: tasks/06_os-setup.yaml
+  roles:
+  - common
 
-#   - name: INCLUDE CRIO INSTALL TASKS
-#     include_tasks: tasks/07_crio-install.yaml
+- name: INIT K8S MASTER NODE
+  hosts: controller
+  become: true
+  vars_files: defaults/main.yaml
 
-#   - name: INCLUDE K8s INSTALL TASKS
-#     include_tasks: tasks/08_k8s-install.yaml
+  roles:
+  - k8s_master
 
-# - name: INIT K8S MASTER NODE
-#   hosts: controller
-#   become: true
-#   vars_files: defaults/main.yaml
+- name: INIT K8S WORKER NODES
+  hosts: node
+  become: true
+  vars_files: defaults/main.yaml
 
-#   tasks:
-#   - name: INCLUDE KUBEADM MASTER NDOE TASKS
-#     include_tasks: tasks/09_kubeadm-master.yaml
-
-# - name: INIT K8S WORKER NODES
-#   hosts: node
-#   become: true
-#   vars_files: defaults/main.yaml
-
-#   tasks: 
-#   - name: INCLUDE KUBEADM WORKER NODE TASKS
-#     include_tasks: tasks/10_kubeadm-worker.yaml
+  roles: 
+  - k8s_worker
 
 # - name: INSTALL K8S MANIFESTS & HELM CHARTS
 #   hosts: controller

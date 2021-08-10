@@ -1,0 +1,21 @@
+- name: UPGRADE DISTRO & PACKAGES
+  apt:
+    update_cache: yes
+    upgrade: full
+
+- name: SET HOSTS & HOSTNAME
+  include_tasks: hosts.yaml
+
+- name: INSTALL CRIO
+  include_tasks: crio.yaml
+
+- name: INSTALL K8s
+  include_tasks: k8s.yaml
+
+- name: CONFIGURE KUBECTL AUTOCOMPLETION
+  blockinfile:
+    path: $HOME/.bashrc
+    block: |
+      source <(kubectl completion bash)
+      alias k=kubectl
+      complete -F __start_kubectl k
