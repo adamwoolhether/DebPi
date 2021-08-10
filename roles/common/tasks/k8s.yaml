@@ -37,11 +37,11 @@
 # # - debug:
 # #     var: swap_status
 
-  - name: COMMENT OUT SWAP IN FSTAB
-    replace:
-      path: /etc/fstab
-      regexp: ^(\s*)([^#\n]+\s+)(\w+\s+)swap(\s+.*)$
-      replace: '#\1\2\3swap\4'
+- name: COMMENT OUT SWAP IN FSTAB
+  replace:
+    path: /etc/fstab
+    regexp: ^(\s*)([^#\n]+\s+)(\w+\s+)swap(\s+.*)$
+    replace: '#\1\2\3swap\4'
   when: ansible_swaptotal_mb > 0 
 
 - name: DISABLE SWAP
@@ -73,6 +73,13 @@
       name: "{{ k8s_packages }}"
       state: present
     notify: REBOOT
+
+  - name: PIN K8S PACKAGES VERSIONS
+    dpkg_selections:
+      selection: hold
+      name: "{{ item }}"
+    loop: "{{ k8s_packages }}"
+    
   rescue:
     - name: FORCE INSTALL K8S PACKAGES
     ### https://github.com/ansible/ansible/pull/74852
@@ -81,12 +88,6 @@
         state: present
         force: yes
       notify: REBOOT
-
-- name: PIN K8S PACKAGES VERSIONS
-  dpkg_selections:
-    selection: hold
-    name: "{{ item }}"
-  loop: "{{ k8s_packages }}"
 
 - name: START & ENABLE KUBELET SERVICE
   systemd:
