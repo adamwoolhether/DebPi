@@ -56,22 +56,31 @@
 #     state: permissive
 #     policy: targeted
 
-- name: ADD K8S PACKAGE KEYS
-  apt_key:
-    url: "{{ k8s_apt_key }}"
-    state: present
-
-- name: ADD K8S PACKAGE REPOSITORIES
-  apt_repository:
-    repo: "{{ k8s_apt_repo }}"
-    state: present
-
 - name: INSTALL K8S PACKAGES
-  include_tasks: apt.yaml
-  vars:
-    package_list: "{{ k8s_packages }}"
-  register: k8s_packages_result
-  notify: REBOOT
+  block:
+  - name: ADD K8S PACKAGE KEYS 
+    apt_key:
+      url: "{{ k8s_apt_key }}"
+      state: present
+
+  - name: ADD K8S PACKAGE REPOSITORIES
+    apt_repository:
+      repo: "{{ k8s_apt_repo }}"
+      state: present
+
+  - name: INSTALL K8S PACKAGES
+    apt:
+      name: "{{ k8s_packages }}"
+      state: present
+    notify: REBOOT
+  rescue:
+    - name: FORCE INSTALL K8S PACKAGES
+    ### https://github.com/ansible/ansible/pull/74852
+      apt:
+        name: "{{ k8s_packages }}"
+        state: present
+        force: yes
+      notify: REBOOT
 
 - name: PIN K8S PACKAGES VERSIONS
   dpkg_selections:

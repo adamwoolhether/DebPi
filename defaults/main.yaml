@@ -17,6 +17,7 @@ dhcp_gateway: 192.168.1.1
 mac_address: ""
 
 base_packages:
+- isc-dhcp-server
 - bash-completion
 - vim
 - python3-pip
@@ -36,13 +37,13 @@ crio_packages:
 use_distro_runc: false
 
 k8s_cluster_name: DebpiK8s
-k8s_version: 1.21.2
+k8s_version: 1.21.3
 k8s_apt_repo: "deb http://apt.kubernetes.io/ kubernetes-xenial main"
 k8s_apt_key: "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
 k8s_packages:
-- kubelet
-- kubeadm
-- kubectl
+- kubelet={{ k8s_version }}-00
+- kubeadm={{ k8s_version }}-00
+- kubectl={{ k8s_version }}-00
 
 helm_release: https://get.helm.sh/helm-v3.6.2-linux-amd64.tar.gz
 helm_checksum: sha256:https://get.helm.sh/helm-v3.6.2-linux-amd64.tar.gz.sha256sum
