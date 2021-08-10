@@ -41,9 +41,9 @@ k8s_version: 1.21.3
 k8s_apt_repo: "deb http://apt.kubernetes.io/ kubernetes-xenial main"
 k8s_apt_key: "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
 k8s_packages:
-- "kubelet={{ k8s_version }}-00"
-- "kubeadm={{ k8s_version }}-00"
-- "kubectl={{ k8s_version }}-00"
+- kubelet={{ k8s_version }}-00
+- kubeadm={{ k8s_version }}-00
+- kubectl={{ k8s_version }}-00
 
 helm_release: https://get.helm.sh/helm-v3.6.2-linux-amd64.tar.gz
 helm_checksum: sha256:https://get.helm.sh/helm-v3.6.2-linux-amd64.tar.gz.sha256sum
