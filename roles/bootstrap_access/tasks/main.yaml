@@ -7,7 +7,8 @@
     ignore_errors: true
     changed_when: false
     delegate_to: 127.0.0.1
-  - debug:
+  - name: debug
+    debug:
       msg: "return code: {{ ansible_ssh_access.rc }} for whoami: {{ ansible_ssh_access.stdout }}"
 
   - name: "TEST ROOT SSH ACCESS FOR: {{ host_ip }}"

@@ -2,3 +2,12 @@
   reboot:
     msg: reboot initiated
     test_command: whoami
+
+- name: PIN K8S PACKAGES
+  dpkg_selections:
+    selection: hold
+    name: "{{ item }}"
+  loop: 
+    - kubelet
+    - kubeadm
+    - kubectl

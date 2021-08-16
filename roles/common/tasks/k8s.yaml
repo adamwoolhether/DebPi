@@ -72,13 +72,15 @@
     apt:
       name: "{{ k8s_packages }}"
       state: present
-    notify: REBOOT
+    notify: 
+    - REBOOT
+    - PIN K8S PACKAGES
 
-  - name: PIN K8S PACKAGES VERSIONS
-    dpkg_selections:
-      selection: hold
-      name: "{{ item }}"
-    loop: "{{ k8s_packages }}"
+  # - name: PIN K8S PACKAGES VERSIONS
+  #   dpkg_selections:
+  #     selection: hold
+  #     name: "{{ item }}"
+  #   loop: "{{ k8s_packages }}"
     
   rescue:
     - name: FORCE INSTALL K8S PACKAGES
@@ -87,7 +89,9 @@
         name: "{{ k8s_packages }}"
         state: present
         force: yes
-      notify: REBOOT
+      notify:
+      - REBOOT
+      - PIN K8S PACKAGES
 
 - name: START & ENABLE KUBELET SERVICE
   systemd:

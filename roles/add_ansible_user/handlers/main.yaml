@@ -2,3 +2,11 @@
   service:
     name: sshd
     state: restarted
+
+### Idempotent method with encryption not working
+- name: SET PASSWD
+  expect:
+    command: passwd "{{ user_name }}"
+    responses:
+      "New password:": "{{ ansible_pass }}"
+      "Retype new password:": "{{ ansible_pass }}"

@@ -24,6 +24,7 @@
   command: kubectl cluster-info
   register: cluster_info
   ignore_errors: true
+
   changed_when: false
 # - debug: 
 #     var: cluster_info

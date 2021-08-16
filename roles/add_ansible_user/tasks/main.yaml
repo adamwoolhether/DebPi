@@ -14,17 +14,9 @@
     shell: /bin/bash
     generate_ssh_key: yes
     ssh_key_bits: 2048
-  register: user_add
+  notify: SET PASSWD
 # - debug:
 #     var: user_add
-
-- name: SET PASSWD (IDEMPOTENT METHOD NOT WORKING)
-  expect:
-    command: passwd "{{ user_name }}"
-    responses:
-      "New password:": "{{ ansible_pass }}"
-      "Retype new password:": "{{ ansible_pass }}"
-  when: user_add.changed == true
 
 - name: ALLOW USER {{ user_name }} SSH ACCESS
   lineinfile:
@@ -45,6 +37,7 @@
     line: '{{ user_name }} ALL=(ALL:ALL) NOPASSWD:ALL'
     state: present
     create: true
+    mode: '0644'
 
 - name: COPY SSH KEYS TO {{ user_name }} ACCOUNT
   authorized_key:

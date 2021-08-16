@@ -6,7 +6,6 @@
         src: /etc/network/interfaces.d/eth0
         dest: /etc/network/interfaces.d/eth0.bak
         mode: "0644"
-      changed_when: false
       ignore_errors: true
     - name: "COPY CONFIGURATION"
       copy:

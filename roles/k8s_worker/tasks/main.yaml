@@ -13,5 +13,5 @@
 #     var: crt_check
 
 - name: JOIN THE CLUSTER
-  shell: "{{ hostvars['test-master']['kubeadm_join_cmd'] }}"
-  when: kubelet_check.stat.exists != true or crt_check.stat.exists != true
+  command: "{{ hostvars['test-master']['kubeadm_join_cmd'] }}"
+  when: not kubelet_check.stat.exists or not crt_check.stat.exists

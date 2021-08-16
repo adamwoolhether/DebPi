@@ -12,14 +12,13 @@
 
 - name: INSTALL LIBSECCOMP2
   apt:
-    name: libseccomp2
+    name: libseccomp2=2.4.4-1~bpo10+1
     default_release: buster-backports
-    state: latest
+    state: present
 
 - name: INSTALL CRIO PACKAGES
-  include_tasks: apt.yaml
-  vars:
-    package_list: "{{ crio_packages }}"
+  apt: 
+    name: "{{ crio_packages }}"
 
 - name: USE DISTRO'S RUNC (OPTIONAL)
   blockinfile:
